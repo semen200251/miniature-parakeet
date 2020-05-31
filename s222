@@ -1,0 +1,543 @@
+#include <stdio.h> 
+#include <string.h> 
+#include <ctype.h> 
+#include <conio.h> 
+#include <stdlib.h> 
+#include <math.h>
+#include <errno.h>
+int readLine(char** str, FILE* stream)
+{
+	int c = 0;
+	int i = 0;
+	int size = 50;
+
+	*str = malloc(size);
+
+	if (!(*str))
+		return -1;
+
+	while ((c = getc(stream)) != EOF && c != 26)
+	{
+		if (i >= size - 1)
+		{
+			char* l = realloc(*str, size + 50);
+
+			size += 50;
+
+			if (!l)
+				return -1;
+			*str = l;
+		}
+
+		if (c == '\n')
+		{
+			(*str)[i] = 0;
+			return 0;
+		}
+
+		(*str)[i] = (char)c;
+		i++;
+	}
+
+	(*str)[i] = 0;
+
+	if (i)
+		return 2;
+
+	return 1;
+}
+
+int isSpaceStr(char* str)
+{
+	int i = 0;
+	int len = strlen(str);
+	while (str[i] != 0 && isspace(str[i]))
+		i++;
+	return i >= len;
+}
+int DelSp(char* simbol, unsigned int* _size_string)
+{
+	int count_spaces = 0;
+	for (unsigned int i = 0; i < *_size_string; i++)
+	{
+		if (isspace(simbol[i]))
+			count_spaces++;
+		else
+			simbol[i - count_spaces] = simbol[i];
+	}
+	for (unsigned int i = *_size_string - count_spaces;i < *_size_string;i++)
+	{
+		simbol[i] = simbol[i + 2];
+	}
+	(*_size_string) -= count_spaces;
+	return 0;
+}
+int Delete_Space_in_str(char* str, unsigned int* size) 
+{
+	int count_spaces = 0;
+	for (unsigned int i = 0; i < *size + 1; i++)
+		if (isspace(str[i])!=0)
+		{
+			count_spaces++;
+		}
+		else
+		{
+			str[i - count_spaces] = str[i];
+		}
+	(*size) -= count_spaces;
+	return 0;
+}
+
+int calculating(char* str)
+{
+	int e = 0;
+	errno = 0;
+	//unsigned int minus = 0;
+	int z = 0;
+	int k = 0;
+	int count_bracket = 0;
+	int last_open = 0;
+	int first_close = 0;
+	unsigned int len = strlen(str);
+	printf("%s == ", str);
+	Delete_Space_in_str(str, &len);
+	unsigned int num = 0;
+	//unsigned int d = 0;
+	int count_digit = 0;
+	unsigned int count_operation = 0;
+	//int position[100];
+	char simbol[100] = "";
+	double digit[100] = { 0 };
+	for (unsigned int i = 0;i < len;i++)
+	{
+		if (i == 0)
+		{
+			if (str[i] == '-' && str[i + 1] == '(' && isdigit(str[i - 1]) == 0)
+			{
+				simbol[count_operation] = '*';
+				digit[count_digit] = -1;
+				count_operation++;
+				count_digit++;
+				i++;
+			}
+			if (str[0] == '-' && isdigit(str[1]) != 0)
+			{
+				digit[count_digit] = atoi(str);
+				num = 1;
+				count_digit++;
+			}
+			else if (str[0] == '-' && isdigit(str[1]) == 0)
+			{
+				simbol[count_operation] = str[i];
+				count_operation++;
+			}
+			if (str[0] != '-' && isdigit(str[0]) == 0)
+			{
+				simbol[count_operation] = str[i];
+				count_operation++;
+			}
+			else if (str[0] != '-' && isdigit(str[0]) != 0)
+			{
+				digit[count_digit] = atoi(str);
+				num = 1;
+				count_digit++;
+			}
+		}
+		else
+		{
+
+			if (str[i] == '-' && str[i + 1] == '(' && str[i - 1]== '(')
+			{
+				simbol[count_operation] = '*';
+				digit[count_digit] = -1;
+				count_operation++;
+				count_digit++;
+				i++;
+			}
+			if (str[i] == '-'&&(isdigit(str[i - 1]) != 0 || str[i - 1] == ')') || (str[i] == '-' && ((str[i - 1] == '(' || str[i - 1] == ')') && (str[i + 1] == '(' || str[i + 1] == ')'))))
+			{
+				simbol[count_operation] = str[i];
+				count_operation++;
+				if (isdigit(str[i + 1]))
+					i++;
+				num = 0;
+			}
+			if (str[i] == '-' && isdigit(str[i - 1]) == 0 && isdigit(str[i + 1]) != 0 && num == 0)
+			{
+				digit[count_digit] = atoi(str + i);
+				count_digit++;
+				num = 1;
+			}
+			if (str[i] != '-' && isdigit(str[i]) == 0)
+			{
+				simbol[count_operation] = str[i];
+				num = 0;
+				count_operation++;
+			}
+			if (str[i] != '-' && isdigit(str[i]) != 0 && num == 0)
+			{
+				digit[count_digit] = atoi(str + i);
+				num = 1;
+				count_digit++;
+			}
+		}
+	}
+	while (count_digit != 1)
+	{
+		count_bracket = 0;
+		for (unsigned int i = 0; i < count_operation;i++)
+		{
+			if (simbol[i] == '(')
+			{
+				last_open = i;
+				count_bracket++;
+			}
+			if (simbol[i] == ')')
+			{
+				first_close = i;
+				e = 1;
+				break;
+			}
+		}
+		if (e == 0) {
+			for (int i = count_operation - 1;i >= 0;i--)
+			{
+				if (simbol[i] == '^')
+				{
+					digit[i] = pow(digit[i], digit[i + 1]);
+					if (errno== EDOM)
+					{
+						printf("ERROR: error\n");
+						z = 1;
+					}
+					for (int x = i + 1;x < count_digit;x++)
+					{
+						digit[x] = digit[x + 1];
+					}
+					if (simbol[i + 1] == '^')
+						k = 1;
+					for (unsigned int x = i;x < count_operation;x++)
+					{
+						simbol[x] = simbol[x + 1];
+					}
+					if (k == 1)
+						i--;
+					count_digit--;
+					count_operation--;
+					k = 0;
+				}
+			}
+			for (unsigned int i = 0;i < count_operation;i++)
+			{
+				if (simbol[i] == '*')
+				{
+					digit[i] = digit[i] * digit[i + 1];
+					for (int x = i + 1;x < count_digit;x++)
+					{
+						digit[x] = digit[x + 1];
+					}
+					if (simbol[i + 1] == '*' || simbol[i + 1] == '/')
+						k = 1;
+					for (unsigned int x = i;x < count_operation;x++)
+					{
+						simbol[x] = simbol[x + 1];
+					}
+					if (k == 1)
+						i--;
+					count_digit--;
+					count_operation--;
+					k = 0;
+				}
+				if (simbol[i] == '/')
+				{
+					if (digit[i + 1] == 0)
+					{
+						printf("ERROR: error\n");
+						z = 1;
+					}
+					digit[i] = (double)(digit[i] / digit[i + 1]);
+					for (int x = i + 1;x < count_digit;x++)
+					{
+						digit[x] = digit[x + 1];
+					}
+					if (simbol[i + 1] == '*' || simbol[i + 1] == '/')
+						k = 1;
+					for (unsigned int x = i;x < count_operation;x++)
+					{
+						simbol[x] = simbol[x + 1];
+					}
+					if (k == 1)
+						i--;
+					count_digit--;
+					count_operation--;
+					k = 0;
+				}
+			}
+			for (unsigned int i = 0;i < count_operation;i++)
+			{
+				if (simbol[i] == '+')
+				{
+					digit[i] = digit[i] + digit[i + 1];
+					for (int x = i + 1;x < count_digit;x++)
+					{
+						digit[x] = digit[x + 1];
+					}
+					if (simbol[i + 1] == '-' || simbol[i + 1] == '+')
+						k = 1;
+					for (unsigned int x = i;x < count_operation;x++)
+					{
+						simbol[x] = simbol[x + 1];
+					}
+					if (k == 1)
+						i--;
+					count_digit--;
+					count_operation--;
+					k = 0;
+				}
+				if (simbol[i] == '-')
+				{
+					digit[i] = digit[i] - digit[i + 1];
+					for (int x = i + 1;x < count_digit;x++)
+					{
+						digit[x] = digit[x + 1];
+					}
+					if (simbol[i + 1] == '-' || simbol[i + 1] == '+')
+						k = 1;
+					for (unsigned int x = i;x < count_operation;x++)
+					{
+						simbol[x] = simbol[x + 1];
+					}
+					if (k == 1)
+						i--;
+					count_digit--;
+					count_operation--;
+					k = 0;
+				}
+			}
+		}
+		else
+		{
+			for (int i = last_open + 1;i < first_close;i++)
+			{
+				if (simbol[i] == '^')
+				{
+					if (errno == EDOM)
+					{
+						printf("ERROR: error\n");
+						z = 1;
+					}
+					digit[i - count_bracket] = pow(digit[i - count_bracket], digit[i - count_bracket + 1]);
+					for (int x = i - (count_bracket - 1);x < count_digit;x++)
+					{
+						digit[x] = digit[x + 1];
+					}
+					if (simbol[i + 1] == '^')
+						k = 1;
+					for (unsigned int x = i;x <= count_operation;x++)
+					{
+						simbol[x] = simbol[x + 1];
+					}
+					if (k == 1)
+						i--;
+					count_digit--;
+					count_operation--;
+					first_close--;
+					k = 0;
+				}
+			}
+			for (int i = last_open + 1;i < first_close;i++)
+			{
+				if (simbol[i] == '*')
+				{
+					digit[i - count_bracket] = digit[i - count_bracket] * digit[i - count_bracket + 1];
+					for (int x = i - (count_bracket - 1);x < count_digit;x++)
+					{
+						digit[x] = digit[x + 1];
+					}
+					if (simbol[i + 1] == '*')
+						k = 1;
+					for (unsigned int x = i;x <= count_operation;x++)
+					{
+						simbol[x] = simbol[x + 1];
+					}
+					if (k == 1)
+						i--;
+					count_digit--;
+					count_operation--;
+					first_close--;
+					k = 0;
+				}
+				if (simbol[i] == '/')
+				{
+					if (digit[i - count_bracket + 1] == 0)
+					{
+						z = 1;
+						printf("ERROR: error\n");
+					}
+					digit[i - count_bracket] = digit[i - count_bracket] / digit[i - count_bracket + 1];
+					for (int x = i - (count_bracket - 1);x < count_digit;x++)
+					{
+						digit[x] = digit[x + 1];
+					}
+					if (simbol[i + 1] == '/')
+						k = 1;
+					for (unsigned int x = i;x <= count_operation;x++)
+					{
+						simbol[x] = simbol[x + 1];
+					}
+					if (k == 1)
+						i--;
+					count_digit--;
+					first_close--;
+					count_operation--;
+					k = 0;
+				}
+			}
+
+			for (int i = last_open + 1;i < first_close;i++)
+			{
+				if (simbol[i] == '+')
+				{
+					digit[i - count_bracket] = digit[i - count_bracket] + digit[i - count_bracket + 1];
+					for (int x = i - (count_bracket - 1);x < count_digit;x++)
+					{
+						digit[x] = digit[x + 1];
+					}
+					if (simbol[i + 1] == '+' || simbol[i + 1] == '-')
+						k = 1;
+					for (unsigned int x = i;x <= count_operation;x++)
+					{
+						simbol[x] = simbol[x + 1];
+					}
+					if (k == 1)
+						i--;
+					count_digit--;
+					first_close--;
+					count_operation--;
+					k = 0;
+				}
+				if (simbol[i] == '-')
+				{
+					digit[i - count_bracket] = digit[i - count_bracket] - digit[i - count_bracket + 1];
+					for (int x = i - (count_bracket - 1);x < count_digit;x++)
+					{
+						digit[x] = digit[x + 1];
+					}
+					if (simbol[i + 1] == '+' || simbol[i + 1] == '-')
+						k = 1;
+					for (unsigned int x = i;x <= count_operation;x++)
+					{
+						simbol[x] = simbol[x + 1];
+					}
+					if (k == 1)
+						i--;
+					count_digit--;
+					first_close--;
+					count_operation--;
+					k = 0;
+				}
+			}
+
+			for (unsigned int i = 0; i < count_operation;i++)
+			{
+				if (simbol[i] == '(' && simbol[i + 1] == ')')
+				{
+					count_bracket = 0;
+					simbol[i] = ' ';
+					simbol[i + 1] = ' ';
+					DelSp(simbol, &count_operation);
+					e = 0;
+				}
+			}
+		}
+	}
+	if (z != 1)
+		printf("%g\n",digit[0]);
+	return 0;
+}
+int write(char* str)
+{
+	unsigned int d = 0;
+	unsigned int ride = 0;
+	unsigned int left = 0;
+	int k = 1;
+	unsigned int len = strlen(str);
+	if (!(str[0] == '\n' || str[0] == '\0'))
+	{
+		if (!(str[0] == '/' && str[1] == '/') && !isSpaceStr(str))
+		{
+			for (unsigned int i = 0; i < len; i++)
+			{
+
+				if (isdigit(str[i]) == 0 && str[i] != '(' && str[i] != ')' && str[i] != '+' && str[i] != '-' && str[i] != '*' && str[i] != '/'&& str[i] != '^'&&isspace(str[i])==0)
+					k = 0;
+
+				if (str[i] == ')')
+					ride++;
+				if (str[i] == '(')
+					left++;
+				if (isdigit(str[i]) != 0)
+					d++;
+			}
+			if (ride - left != 0)
+			{
+				printf("%s == ERROR: brackets\n", str);
+				k = 1;
+				d = 1;
+			}
+			else if (k == 1 && d != 0)
+				calculating(str);
+		}
+		else
+		{
+			printf("%s\n", str);
+			return 0;
+		}
+
+	}
+	else
+	{
+		printf("\n");
+		return 0;
+	}
+	if (k == 0 && d != 0)
+		printf("%s == ERROR: incorrectly\n", str);
+	if (d == 0)
+		printf("%s == ERROR: incorrectly\n", str);
+	int strSize = sizeof(str);
+
+	memset(str, 0, strSize);
+	return 0;
+}
+
+
+
+
+
+
+
+
+int main(int argc, char** argv)
+{
+	FILE* stream = stdin;
+
+	if (argc > 1)
+	{
+		if (fopen_s(&stream, argv[1], "r"))
+			return 1;
+	}
+	char* str = NULL;
+	int var = 0;
+	while (!var)
+	{
+		var = readLine(&str, stream);
+		if (var == 1)
+		{
+			free(str);
+			break;
+		}
+		write(str);
+		free(str);
+	}
+	return 0;
+}
